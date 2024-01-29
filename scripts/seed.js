@@ -6,51 +6,53 @@ const {
   users,
 } = require('../app/lib/placeholder-data.js');
 const bcrypt = require('bcrypt');
-
+//================================================================
 async function seedUsers(client) {
   try {
     await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
-    // Create the "users" table if it doesn't exist
+    // สร้างตาราง "users" หากไม่มีอยู่
     const createTable = await client.sql`
       CREATE TABLE IF NOT EXISTS users (
         id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         email TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL
+        password TEXT NOT NULL,
+        role VARCHAR(255) NOT NULL,
+        date DATE NOT NULL
       );
     `;
 
-    console.log(`Created "users" table`);
+    console.log(`สร้างตาราง "ผู้ใช้"`);
 
-    // Insert data into the "users" table
+    // ใส่ข้อมูลลงในตาราง "ผู้ใช้"
     const insertedUsers = await Promise.all(
       users.map(async (user) => {
         const hashedPassword = await bcrypt.hash(user.password, 10);
         return client.sql`
-        INSERT INTO users (id, name, email, password)
-        VALUES (${user.id}, ${user.name}, ${user.email}, ${hashedPassword})
+        INSERT INTO users (id, name, email, password, role, date)
+        VALUES (${user.id}, ${user.name}, ${user.email}, ${hashedPassword}, ${user.role}, ${user.date})
         ON CONFLICT (id) DO NOTHING;
       `;
       }),
     );
 
-    console.log(`Seeded ${insertedUsers.length} users`);
+    console.log(`กำหนดผู้ใช้: ${insertedUsers.length} ราย`);
 
     return {
       createTable,
       users: insertedUsers,
     };
   } catch (error) {
-    console.error('Error seeding users:', error);
+    console.error('เกิดข้อผิดพลาดในการระบุผู้ใช้:', error);
     throw error;
   }
 }
-
+//================================================================
 async function seedInvoices(client) {
   try {
     await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
 
-    // Create the "invoices" table if it doesn't exist
+    // สร้างตาราง "ใบแจ้งหนี้" หากไม่มีอยู่
     const createTable = await client.sql`
     CREATE TABLE IF NOT EXISTS invoices (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -61,9 +63,9 @@ async function seedInvoices(client) {
   );
 `;
 
-    console.log(`Created "invoices" table`);
+    console.log(`สร้างตาราง "ใบแจ้งหนี้" แล้ว`);
 
-    // Insert data into the "invoices" table
+    // ใส่ข้อมูลลงในตาราง "ใบแจ้งหนี้"
     const insertedInvoices = await Promise.all(
       invoices.map(
         (invoice) => client.sql`
@@ -74,92 +76,93 @@ async function seedInvoices(client) {
       ),
     );
 
-    console.log(`Seeded ${insertedInvoices.length} invoices`);
+    console.log(`ใบแจ้งหนี้:  ${insertedInvoices.length} เริ่มต้นแล้ว`);
 
     return {
       createTable,
       invoices: insertedInvoices,
     };
   } catch (error) {
-    console.error('Error seeding invoices:', error);
+    console.error('เกิดข้อผิดพลาดในการเริ่มใบแจ้งหนี้:', error);
     throw error;
   }
 }
-
+//================================================================
 async function seedCustomers(client) {
   try {
     await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
 
-    // Create the "customers" table if it doesn't exist
+    // สร้างตาราง "ลูกค้า" หากไม่มีอยู่
     const createTable = await client.sql`
       CREATE TABLE IF NOT EXISTS customers (
         id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) NOT NULL,
-        image_url VARCHAR(255) NOT NULL
+        date DATE NOT NULL
       );
     `;
 
-    console.log(`Created "customers" table`);
+    console.log(`สร้างตาราง "ลูกค้า"`);
 
-    // Insert data into the "customers" table
+    // ใส่ข้อมูลลงในตาราง "ลูกค้า"
     const insertedCustomers = await Promise.all(
       customers.map(
         (customer) => client.sql`
-        INSERT INTO customers (id, name, email, image_url)
-        VALUES (${customer.id}, ${customer.name}, ${customer.email}, ${customer.image_url})
+        INSERT INTO customers (id, name, email, date)
+        VALUES (${customer.id}, ${customer.name}, ${customer.email}, ${customer.date})
         ON CONFLICT (id) DO NOTHING;
       `,
       ),
     );
 
-    console.log(`Seeded ${insertedCustomers.length} customers`);
+    console.log(`พบลูกค้า: ${insertedCustomers.length} ราย`);
 
     return {
       createTable,
       customers: insertedCustomers,
     };
   } catch (error) {
-    console.error('Error seeding customers:', error);
+    console.error('เกิดข้อผิดพลาดในการระบุลูกค้า:', error);
     throw error;
   }
 }
-
+//================================================================
 async function seedRevenue(client) {
   try {
-    // Create the "revenue" table if it doesn't exist
+    // สร้างตาราง "รายได้" หากไม่มีอยู่
     const createTable = await client.sql`
       CREATE TABLE IF NOT EXISTS revenue (
         month VARCHAR(4) NOT NULL UNIQUE,
-        revenue INT NOT NULL
+        revenue INT NOT NULL,
+        date DATE NOT NULL
       );
     `;
 
-    console.log(`Created "revenue" table`);
+    console.log(`สร้างตาราง "รายได้"`);
 
-    // Insert data into the "revenue" table
+    // ใส่ข้อมูลลงในตาราง "รายได้"
     const insertedRevenue = await Promise.all(
       revenue.map(
         (rev) => client.sql`
-        INSERT INTO revenue (month, revenue)
-        VALUES (${rev.month}, ${rev.revenue})
+        INSERT INTO revenue (month, revenue, date)
+        VALUES (${rev.month}, ${rev.revenue}, ${rev.date})
         ON CONFLICT (month) DO NOTHING;
       `,
       ),
     );
 
-    console.log(`Seeded ${insertedRevenue.length} revenue`);
+    console.log(`เพิ่มรายได้: ${insertedRevenue.length}`);
 
     return {
       createTable,
       revenue: insertedRevenue,
     };
   } catch (error) {
-    console.error('Error seeding revenue:', error);
+    console.error('เกิดข้อผิดพลาดในการเพาะรายได้:', error);
     throw error;
   }
 }
-
+//================================================================
 async function main() {
   const client = await db.connect();
 
@@ -173,7 +176,8 @@ async function main() {
 
 main().catch((err) => {
   console.error(
-    'An error occurred while attempting to seed the database:',
+    'เกิดข้อผิดพลาดขณะพยายามสร้างฐานข้อมูล:',
     err,
   );
 });
+//================================================================
