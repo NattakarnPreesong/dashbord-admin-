@@ -163,6 +163,43 @@ async function seedRevenue(client) {
   }
 }
 //================================================================
+async function seedInterfaces(client) {
+  try {
+    // สร้างตาราง "configs" หากไม่มีอยู่
+    const createTable = await client.sql`
+      CREATE TABLE IF NOT EXISTS configs (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        header VARCHAR(255) NOT NULL,
+        footer VARCHAR(255) NOT NULL,
+      );
+    `;
+
+    console.log(`สร้างตาราง "อินเตอร์เฟซ"`);
+
+    // ใส่ข้อมูลลงในตาราง "อินเตอร์เฟซ"
+    const insertedconfigs = await Promise.all(
+      configs.map(async (configs) => {
+        return client.sql`
+        INSERT INTO configs (id, title, header)
+        VALUES (${configs.id}, ${configs.title}, ${configs.header})
+        ON CONFLICT (id) DO NOTHING;
+      `;
+      }),
+    );
+
+    console.log(`เริ่มต้นconfigs ${insertedconfigs.length} แล้ว`);
+
+    return {
+      createTable,
+      configs: insertedconfigs,
+    };
+  } catch (error) {
+    console.error('เกิดข้อผิดพลาดในการระบุconfigs:', error);
+    throw error;
+  }
+}
+//================================================================
 async function main() {
   const client = await db.connect();
 
@@ -170,14 +207,12 @@ async function main() {
   await seedCustomers(client);
   await seedInvoices(client);
   await seedRevenue(client);
+  await seedInterfaces(client);
 
   await client.end();
 }
 
 main().catch((err) => {
-  console.error(
-    'เกิดข้อผิดพลาดขณะพยายามสร้างฐานข้อมูล:',
-    err,
-  );
+  console.error('เกิดข้อผิดพลาดขณะพยายามสร้างฐานข้อมูล:', err);
 });
 //================================================================
